@@ -5,8 +5,7 @@ def test_calibrated_quantile():
     from .uq import _calibrated_quantile
 
     m = 128
-    sampled = torch.arange(start=1, end=m + 1).float()
-    print(len(sampled))
+    sampled = torch.arange(start=1, end=m + 1).float() / m
 
     alpha = 0.10
     I = _calibrated_quantile(sampled, alpha=alpha, dim=0)
@@ -18,7 +17,7 @@ def test_calibrated_quantile():
         and len(sampled[sampled <= u0]) == expected_u0
     )
 
-    l, u = I(1)
+    l, u = I(1 / m)
     expected_l, expected_u = 5, 124
     assert (
         len(sampled[sampled <= l]) == expected_l
@@ -29,7 +28,7 @@ def test_calibrated_quantile():
 def test_quantile_regression():
     from .uq import _quantile_regression
 
-    x = torch.arange(4)
+    x = torch.arange(start=1, end=5) / 10
     l = u = torch.ones_like(x)
     denoised = torch.stack([l, x, u], dim=1)
 
