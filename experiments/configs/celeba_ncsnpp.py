@@ -1,6 +1,5 @@
 import os
-from configs import utils
-from experiments.configs import default_celeba
+from configs import default_celeba, utils
 
 
 @utils.register_config(name="celeba_ncsnpp")

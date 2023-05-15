@@ -42,7 +42,7 @@ def main(_):
         dlambda = 5e-03
     if config.data.dataset == "AbdomenCT1K":
         alpha = 0.20
-        delta = 0.1
+        delta = 0.10
         epsilon = 0.05
 
         dlambda = 2e-03
@@ -137,7 +137,7 @@ def main(_):
     def _calibrate_k_rcps(uq_name, uq_fn, lambda_max):
         k_rcps_fn = get_calibration("k_rcps")
 
-        for n_opt in [128, 256]:
+        for n_opt in [256]:
             for prob_size in [50, 100]:
                 for k in [4, 8, 32]:
                     calibration_name = f"k_rcps_{n_opt}_{prob_size}_{k}"
@@ -164,14 +164,14 @@ def main(_):
         uq_name, lambda_max = "naive_sampling_additive", 0.2
         uq_fn = get_uq(uq_name, alpha=alpha, dim=1)
 
-        _calibrate_rcps(uq_name, uq_fn, lambda_max)
+        # _calibrate_rcps(uq_name, uq_fn, lambda_max)
         _calibrate_k_rcps(uq_name, uq_fn, lambda_max)
 
-        uq_name, lambda_max = "calibrated_quantile", 0.6
-        uq_fn = get_uq(uq_name, alpha=alpha, dim=1)
+        # uq_name, lambda_max = "calibrated_quantile", 0.6
+        # uq_fn = get_uq(uq_name, alpha=alpha, dim=1)
 
-        _calibrate_rcps(uq_name, uq_fn, lambda_max)
-        _calibrate_k_rcps(uq_name, uq_fn, lambda_max)
+        # _calibrate_rcps(uq_name, uq_fn, lambda_max)
+        # _calibrate_k_rcps(uq_name, uq_fn, lambda_max)
     if config.model.name == "im2im_ncsnpp":
         uq_name, lambda_max = "quantile_regression", 1.2
         uq_fn = get_uq(uq_name)

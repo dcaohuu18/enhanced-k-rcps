@@ -46,21 +46,6 @@ def _naive_sampling_additive(
     return _I
 
 
-@register_uq(name="naive_sampling_multiplicative")
-def _naive_sampling_multiplicative(
-    sampled: torch.Tensor, alpha: float = None, dim: int = None
-):
-    q = torch.quantile(sampled, torch.tensor([alpha / 2, 1 - alpha / 2]), dim=dim)
-    l, u = q[0], q[1]
-
-    def _I(_lambda: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        l_lambda = l / _lambda
-        u_lambda = u * _lambda
-        return _normalize(l_lambda, u_lambda)
-
-    return _I
-
-
 @register_uq(name="calibrated_quantile")
 def _calibrated_quantile(sampled: torch.Tensor, alpha: float = None, dim: int = None):
     m = sampled.size(dim)

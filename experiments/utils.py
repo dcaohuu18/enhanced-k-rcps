@@ -4,6 +4,30 @@ import numpy as np
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
+calibration_dict = {
+    "ncsnpp": [
+        {"name": "rcps", "uq_name": ["naive_sampling_additive", "calibrated_quantile"]},
+        {
+            "name": "krcps",
+            "uq_name": ["naive_sampling_additive", "calibrated_quantile"],
+        },
+    ],
+    "ncsnpp_conffusion": [
+        {
+            "name": "rcps",
+            "uq_name": [
+                "conffusion_multiplicative",
+                "conffusion_additive",
+            ],
+        },
+        {"name": "krcps", "uq_name": ["conffusion_additive"]},
+    ],
+    "im2im_ncsnpp": [
+        {"name": "rcps", "uq_name": ["quantile_regression"]},
+    ],
+    "im2im_ncsnpp_mc_dropout": [{"name": "rcps", "uq_name": ["std"]}],
+}
+
 
 def denoising_results(dataset, config, shuffle=False, n=None):
     denoising_dir = os.path.join(os.path.dirname(__file__), "denoising")
