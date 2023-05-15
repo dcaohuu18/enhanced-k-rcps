@@ -1,18 +1,18 @@
 def test_rcps():
-    pass
+    from .calibration import _rcps
 
 
 def test_calibrate_rcps():
-    pass
+    from .calibration import _calibrate_rcps
 
 
 def test_gamma_loss_fn():
-    pass
+    from .calibration import _gamma_loss_fn
 
 
 def test_pk():
-    pass
+    from .calibration import _pk
 
 
 def test_calibrate_k_rcps():
-    pass
+    from .calibration import _calibrate_k_rcps
