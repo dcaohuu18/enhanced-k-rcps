@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-
 from models import ncsnpp
 from models.utils import register_model
 

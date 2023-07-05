@@ -1,11 +1,12 @@
 """ Full assembly of the parts to form the complete network """
-import os, sys, inspect
+import inspect
+import os
+import sys
 
 sys.path.insert(1, os.path.join(sys.path[0], "../../../"))
-import torch.nn.functional as F
-
-from models.im2im.trunks.unet_parts import *
 import torch.nn as nn
+import torch.nn.functional as F
+from models.im2im.trunks.unet_parts import *
 
 
 class WNet(nn.Module):

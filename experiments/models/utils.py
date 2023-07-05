@@ -17,10 +17,10 @@
 """
 
 import os
-import torch
 
 # import sde_lib
 import numpy as np
+import torch
 from ml_collections import ConfigDict
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -1,7 +1,8 @@
 import ml_collections
 import torch.nn as nn
-from .im2im.finallayers.quantile_layer import QuantileRegressionLayer
+
 from . import utils
+from .im2im.finallayers.quantile_layer import QuantileRegressionLayer
 
 
 @utils.register_model(name="ncsnpp_conffusion")

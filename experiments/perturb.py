@@ -1,10 +1,11 @@
 import os
+
 import ml_collections
 import torch
 from absl import app, flags
+from dataset import get_dataset
 from ml_collections.config_flags import config_flags
 from torch.utils.data import DataLoader
-from dataset import get_dataset
 from tqdm import tqdm
 
 FLAGS = flags.FLAGS

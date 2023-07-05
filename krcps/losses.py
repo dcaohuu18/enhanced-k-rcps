@@ -1,5 +1,6 @@
-import torch
 import cvxpy as cp
+import torch
+
 from .utils import register_loss
 
 

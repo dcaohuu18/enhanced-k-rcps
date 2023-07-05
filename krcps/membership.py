@@ -1,6 +1,7 @@
-import torch
 import numpy as np
+import torch
 from skimage.filters import threshold_multiotsu
+
 from .utils import get_loss, register_membership
 
 
