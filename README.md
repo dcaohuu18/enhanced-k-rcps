@@ -2,14 +2,15 @@
 
 [![test](https://github.com/Sulam-Group/k-rcps/actions/workflows/test.yml/badge.svg)](https://dl.circleci.com/status-badge/redirect/gh/Sulam-Group/k-rcps/tree/main)
 [![codecov](https://codecov.io/gh/Sulam-Group/k-rcps/branch/main/graph/badge.svg?token=PBTV5HYXKR)](https://codecov.io/gh/Sulam-Group/k-rcps)
+[![zenodo](https://zenodo.org/badge/DOI/10.5281/zenodo.7990217.svg)](https://zenodo.org/record/7990217)
 
-This is the official implementation of the paper [*How To Trust Your Diffusion Model: A Convex Optimization Approach to Conformal Risk Control*](https://arxiv.org/abs/2302.03791)
+This is the official implementation of the paper [*How To Trust Your Diffusion Model: A Convex Optimization Approach to Conformal Risk Control*](https://arxiv.org/abs/2302.03791) @ [ICML 2023](https://icml.cc/virtual/2023/paper_metadata_from_author/24442)
 
 by [Jacopo Teneggi](https://jacopoteneggi.github.io), Matt Tivnan, J Webster Stayman, and [Jeremias Sulam](https://sites.google.com/view/jsulam).
 
 ---
 
-$K$-RCPS is a high-dimensional extension of the [Risk Controlling Prediction Sets (RCPS)](https://github.com/aangelopoulos/rcps) procedure that provably minimizes the mean interval length.
+$K$-RCPS is a high-dimensional extension of the [Risk Controlling Prediction Sets (RCPS)](https://github.com/aangelopoulos/rcps) procedure that provably minimizes the mean interval length by means of a convex relaxation.
 
 It is based on $\ell^{\gamma}$: a convex upper-bound to the $01$ loss $\ell^{01}$
 
@@ -58,6 +59,10 @@ _lambda_k = krcps_fn(
 ## How to Extend the Current Implementation
 
 $K$-RCPS can be easily extended with new bounds, notions of uncertainty, and membership functions via `krcps/bounds.py`, `krcps/uq.py`, and `krcps/membership.py` respectively.
+
+## Reproducibility
+
+All model checkpoints are available on [Zenodo](https://zenodo.org/record/7990217) alongside the perturbed images used in the paper. `checkpoints.zip` and `denoising.zip` should both be unzipped in the `experiments` folder.
 
 ## References
 ```
