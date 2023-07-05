@@ -1,17 +1,19 @@
 import os
-import torch
-import numpy as np
+from typing import Callable, Iterable
+
 import cvxpy as cp
+import numpy as np
+import torch
 from tqdm import tqdm
+
 from .utils import (
-    get_loss,
+    _set_I,
+    _split_idx,
     get_bound,
+    get_loss,
     get_membership,
     register_calibration,
-    _split_idx,
-    _set_I,
 )
-from typing import Iterable, Callable
 
 
 def _rcps(

@@ -1,5 +1,7 @@
-import torch
 from typing import Tuple
+
+import torch
+
 from .utils import register_uq
 
 

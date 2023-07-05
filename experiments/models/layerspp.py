@@ -16,12 +16,12 @@
 # pylint: skip-file
 """Layers for defining NCSN++.
 """
-from . import layers
-from . import up_or_down_sampling
-import torch.nn as nn
-import torch
-import torch.nn.functional as F
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from . import layers, up_or_down_sampling
 
 conv1x1 = layers.ddpm_conv1x1
 conv3x3 = layers.ddpm_conv3x3

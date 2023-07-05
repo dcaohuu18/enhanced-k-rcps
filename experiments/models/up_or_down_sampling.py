@@ -3,10 +3,10 @@
 Many functions are ported from https://github.com/NVlabs/stylegan2.
 """
 
-import torch.nn as nn
-import torch
-import torch.nn.functional as F
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from op import upfirdn2d
 
 

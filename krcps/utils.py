@@ -1,6 +1,7 @@
+from typing import Callable, List, Tuple
+
 import numpy as np
 import torch
-from typing import Callable, List, Tuple
 
 _UQ_DICT = {}
 _LOSS_DICT = {}

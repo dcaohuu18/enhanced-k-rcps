@@ -2,7 +2,7 @@ import torch
 
 
 def test_register_uq():
-    from .utils import register_uq, get_uq
+    from .utils import get_uq, register_uq
 
     @register_uq(name="test")
     def _test(x: torch.Tensor):
@@ -13,7 +13,7 @@ def test_register_uq():
 
 
 def test_register_loss():
-    from .utils import register_loss, get_loss
+    from .utils import get_loss, register_loss
 
     @register_loss(name="test")
     def _test(target: torch.Tensor, l: torch.Tensor, u: torch.Tensor):
@@ -24,7 +24,7 @@ def test_register_loss():
 
 
 def test_register_bound():
-    from .utils import register_bound, get_bound
+    from .utils import get_bound, register_bound
 
     @register_bound(name="test")
     def _test(n: int, delta: float, loss: float):
@@ -35,7 +35,7 @@ def test_register_bound():
 
 
 def test_register_membership():
-    from .utils import register_membership, get_membership
+    from .utils import get_membership, register_membership
 
     @register_membership(name="test")
     def _test(set: torch.Tensor, l: torch.Tensor, u: torch.Tensor, k: int):
@@ -46,7 +46,7 @@ def test_register_membership():
 
 
 def test_register_calibration():
-    from .utils import register_calibration, get_calibration
+    from .utils import get_calibration, register_calibration
 
     @register_calibration(name="test")
     def _test(x: torch.Tensor):

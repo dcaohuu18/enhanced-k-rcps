@@ -14,9 +14,10 @@
 # limitations under the License.
 
 """Normalization layers."""
-import torch.nn as nn
-import torch
 import functools
+
+import torch
+import torch.nn as nn
 
 
 def get_normalization(config, conditional=False):

@@ -1,6 +1,7 @@
 import numpy as np
-from scipy.stats import binom
 from scipy.optimize import brentq
+from scipy.stats import binom
+
 from .utils import register_bound
 
 
