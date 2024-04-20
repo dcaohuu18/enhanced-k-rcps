@@ -13,6 +13,7 @@ from .utils import (
     get_loss,
     get_membership,
     register_calibration,
+    rand_off
 )
 
 
@@ -43,7 +44,7 @@ def _rcps(
     pbar.update(ucb)
     pold = ucb
 
-    while ucb <= epsilon:
+    while torch.sum(eta).item() != 0:
         pbar.update(ucb - pold)
         pold = ucb
 
@@ -56,6 +57,12 @@ def _rcps(
 
         loss = loss_fn(rcps_set, *I(_lambda))
         ucb = bound_fn(n_rcps, delta, loss)
+        if ucb > epsilon: 
+            if eta.shape:
+              eta = rand_off(eta, 0.1)
+              _lambda = prev_lambda
+            else:
+              eta = torch.tensor([0])
     _lambda = prev_lambda
 
     pbar.update(epsilon - pold)
