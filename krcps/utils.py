@@ -84,16 +84,3 @@ def _set_I(I: Callable, set_idx: List[int]) -> Callable:
         return l[set_idx], u[set_idx]
 
     return _f
-
-
-def rand_off(a, p_off):
-  # randomly turn off some of the elements
-  # in the binary vector tensor a
-  flat_a = torch.flatten(a)
-  one_idx = torch.argwhere(flat_a==1)
-  n_off = round(p_off*torch.numel(flat_a))
-  n_off = min(n_off, one_idx.shape[0])
-  off_idx = one_idx[np.random.choice(one_idx.shape[0], n_off, replace=False)]
-  for i in off_idx:
-    flat_a[i] = 0.
-  return flat_a.reshape(a.shape)

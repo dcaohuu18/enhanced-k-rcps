@@ -13,7 +13,6 @@ from .utils import (
     get_loss,
     get_membership,
     register_calibration,
-    rand_off
 )
 
 
@@ -37,14 +36,14 @@ def _rcps(
     if eta is None:
         eta = torch.ones_like(_lambda)
 
-    loss = loss_fn(rcps_set, *I(_lambda))
-    ucb = bound_fn(n_rcps, delta, loss)
+    loss_vec = loss_fn(rcps_set, *I(_lambda), reduction="none")
+    ucb = bound_fn(n_rcps, delta, torch.mean(loss_vec))
 
     pbar = tqdm(total=epsilon)
     pbar.update(ucb)
     pold = ucb
 
-    while torch.sum(eta).item() != 0:
+    while not torch.all(eta == 0):
         pbar.update(ucb - pold)
         pold = ucb
 
@@ -55,15 +54,18 @@ def _rcps(
         _lambda -= stepsize * eta
         _lambda = torch.clamp(_lambda, min=0)
 
-        loss = loss_fn(rcps_set, *I(_lambda))
-        ucb = bound_fn(n_rcps, delta, loss)
-        if ucb > epsilon: 
+        loss_vec = loss_fn(rcps_set, *I(_lambda), reduction="none")
+        prev_ucb = ucb
+        ucb = bound_fn(n_rcps, delta, torch.mean(loss_vec))
+        if ucb > epsilon:
             if eta.shape:
-              eta = rand_off(eta, 0.1)
-              _lambda = prev_lambda
+                entry_loss = torch.mean(loss_vec, dim=0) 
+                eta -= entry_loss
             else:
-              eta = torch.tensor([0])
-    _lambda = prev_lambda
+                eta -= torch.mean(loss_vec)
+            eta = torch.clamp(eta, min=0.0)  
+            _lambda = prev_lambda
+            ucb = prev_ucb
 
     pbar.update(epsilon - pold)
     pbar.close()
@@ -185,6 +187,6 @@ def _calibrate_k_rcps(
 
     _lambda = torch.matmul(m, lambda_k) + lambda_max
     _lambda = _rcps(
-        rcps_set, rcps_I, "01", bound_name, epsilon, delta, _lambda, stepsize
+        rcps_set, rcps_I, "vector_01", bound_name, epsilon, delta, _lambda, stepsize
     )
     return _lambda
