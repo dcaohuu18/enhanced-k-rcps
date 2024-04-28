@@ -106,16 +106,20 @@ def _pk(opt_set, opt_I, epsilon, lambda_max, k, membership_name, prob_size):
     k, nk, m = membership_fn(opt_set, opt_l, opt_u, k)
 
     d = np.prod(opt_set.size()[-2:])
+    # sample d_opt stratified by membership:
     prob_nk = np.round(prob_size / d * nk).astype(int)
     prob_i, prob_j, prob_lambda = [], [], []
-    for _k, _nk in enumerate(prob_nk):
-        _ki, _kj = torch.nonzero(m[:, :, _k] == 1, as_tuple=True)
+    for _k, _pnk in enumerate(prob_nk):
+        # get all the possible coords i,j:
+        _ki, _kj = torch.nonzero(m[:, :, _k] != -2, as_tuple=True)
+        # sample based on normalized membership degree
         _kidx = np.random.choice(
-            torch.sum(m[:, :, _k]).long().item(), size=_nk, replace=False
+            d, size=_pnk, replace=False,
+            p = (torch.flatten(m[:, :, _k])/torch.sum(m[:, :, _k])).numpy()
         )
         prob_i.extend(_ki[_kidx])
         prob_j.extend(_kj[_kidx])
-        prob_lambda.extend(_nk * [_k])
+        prob_lambda.extend(_pnk * [_k])
 
     _lambda = cp.Variable(k)
     q = cp.Parameter(nonneg=True)
@@ -190,3 +194,4 @@ def _calibrate_k_rcps(
         rcps_set, rcps_I, "vector_01", bound_name, epsilon, delta, _lambda, stepsize
     )
     return _lambda
+    
