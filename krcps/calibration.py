@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Iterable
+from typing import Callable, Iterable, List
 
 import cvxpy as cp
 import numpy as np
@@ -58,7 +58,7 @@ def _rcps(
         prev_ucb = ucb
         ucb = bound_fn(n_rcps, delta, torch.mean(loss_vec))
         if ucb > epsilon:
-            if eta.shape:
+            if eta.size():
                 entry_loss = torch.mean(loss_vec, dim=0) 
                 eta -= entry_loss
             else:
@@ -143,6 +143,21 @@ def _pk(opt_set, opt_I, epsilon, lambda_max, k, membership_name, prob_size):
     return (pk, q, _lambda), m
 
 
+def _solve(q, pk, _lambda, gamma):
+    q.value = gamma / (1 - gamma)
+    if os.path.exists(os.path.expanduser("~/mosek/mosek.lic")):
+        pk.solve(
+            solver=cp.MOSEK,
+            verbose=False,
+            warm_start=True,
+            mosek_params={"MSK_IPAR_NUM_THREADS": 1},
+        )
+    else:
+        pk.solve(verbose=False, warm_start=True)
+    lambda_k, obj = torch.tensor(_lambda.value, dtype=torch.float32), pk.value
+    return lambda_k, obj
+
+
 @register_calibration(name="k_rcps")
 def _calibrate_k_rcps(
     cal_set: torch.Tensor,
@@ -153,7 +168,7 @@ def _calibrate_k_rcps(
     lambda_max: float,
     stepsize: torch.Tensor,
     k: int,
-    membership_name: str,
+    membership_names: List[str],
     n_opt: int,
     prob_size: float,
     gamma: Iterable[float],
@@ -167,31 +182,21 @@ def _calibrate_k_rcps(
     opt_I = _set_I(I, opt_idx)
     rcps_I = _set_I(I, rcps_idx)
 
-    prob, m = _pk(opt_set, opt_I, epsilon, lambda_max, k, membership_name, prob_size)
-    pk, q, _lambda = prob
+    agg_lambda = torch.zeros(cal_set.size()[1:])
 
-    def _solve(gamma):
-        q.value = gamma / (1 - gamma)
+    for memn in membership_names:
+      prob, m = _pk(opt_set, opt_I, epsilon, lambda_max, k, memn, prob_size)
+      pk, q, m_lambda = prob
 
-        if os.path.exists(os.path.expanduser("~/mosek/mosek.lic")):
-            pk.solve(
-                solver=cp.MOSEK,
-                verbose=False,
-                warm_start=True,
-                mosek_params={"MSK_IPAR_NUM_THREADS": 1},
-            )
-        else:
-            pk.solve(verbose=False, warm_start=True)
-        lambda_k, obj = torch.tensor(_lambda.value, dtype=torch.float32), pk.value
-        return lambda_k, obj
+      sol = [_solve(q, pk, m_lambda, _gamma) for _gamma in tqdm(gamma)]
+      sol = sorted(sol, key=lambda x: x[-1])
+      lambda_k, _ = sol[0]
+      agg_lambda += torch.matmul(m, lambda_k)
+    
+    agg_lambda /= len(membership_names)
+    agg_lambda += lambda_max 
 
-    sol = [_solve(_gamma) for _gamma in tqdm(gamma)]
-    sol = sorted(sol, key=lambda x: x[-1])
-    lambda_k, _ = sol[0]
-
-    _lambda = torch.matmul(m, lambda_k) + lambda_max
     _lambda = _rcps(
-        rcps_set, rcps_I, "vector_01", bound_name, epsilon, delta, _lambda, stepsize
+        rcps_set, rcps_I, "vector_01", bound_name, epsilon, delta, agg_lambda, stepsize
     )
     return _lambda
-    

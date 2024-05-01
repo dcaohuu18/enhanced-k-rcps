@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from skimage.filters import threshold_multiotsu
+from sklearn.cluster import KMeans
 from itertools import product
 
 from .utils import get_loss, register_membership
@@ -84,6 +85,33 @@ def _01_loss_otsu(opt_set, opt_l, opt_u, k):
     nk = np.empty((k))
     m = torch.zeros(opt_set.size(-2), opt_set.size(-1), k)
     for _k, _t in enumerate(tcoords):
+        nk[_k] = len(_t[0])
+        m[_t[0], _t[1], _k] = 1
+    return k, nk, m
+
+
+@register_membership(name="01_loss_kmeans")
+def _01_loss_kmeans(opt_set, opt_l, opt_u, k):
+    loss_fn = get_loss("vector_01")
+    loss = loss_fn(opt_set, opt_l, opt_u)
+
+    flat_loss = torch.flatten(loss)
+    km = KMeans(n_clusters=k).fit(flat_loss.numpy().reshape(-1,1))
+    m = torch.tensor(km.labels_)
+    m = torch.reshape(m, loss.size())
+
+    # one-hot encoding:
+    ccoords = []
+    for _k in range(k):
+        ccoords.append(torch.nonzero(m == _k, as_tuple=True))
+
+    assert len(ccoords) == k
+    assert all([len(_c[0]) == len(_c[1]) for _c in ccoords])
+    assert sum([len(_c[0]) for _c in ccoords]) == torch.numel(loss)
+
+    nk = np.empty((k))
+    m = torch.zeros(opt_set.size(-2), opt_set.size(-1), k)
+    for _k, _t in enumerate(ccoords):
         nk[_k] = len(_t[0])
         m[_t[0], _t[1], _k] = 1
     return k, nk, m
