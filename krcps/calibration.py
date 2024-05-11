@@ -26,6 +26,7 @@ def _rcps(
     lambda_max: torch.Tensor,
     stepsize: float,
     eta: torch.Tensor = None,
+    momen: float = 0.1
 ):
     loss_fn = get_loss(loss_name)
     bound_fn = get_bound(bound_name)
@@ -35,6 +36,8 @@ def _rcps(
     _lambda = lambda_max
     if eta is None:
         eta = torch.ones_like(_lambda)
+    prev_eta = eta
+    eta_changes = torch.zeros_like(eta)
 
     loss_vec = loss_fn(rcps_set, *I(_lambda), reduction="none")
     ucb = bound_fn(n_rcps, delta, torch.mean(loss_vec))
@@ -60,12 +63,14 @@ def _rcps(
         if ucb > epsilon:
             if eta.size():
                 entry_loss = torch.mean(loss_vec, dim=0) 
-                eta -= entry_loss
+                eta -= (entry_loss + momen*eta_changes)
             else:
-                eta -= torch.mean(loss_vec)
-            eta = torch.clamp(eta, min=0.0)  
+                eta -= (torch.mean(loss_vec) + momen*eta_changes)
+            eta = torch.clamp(eta, min=0.0) 
             _lambda = prev_lambda
             ucb = prev_ucb
+        eta_changes = prev_eta - eta
+        prev_eta = eta
 
     pbar.update(epsilon - pold)
     pbar.close()
