@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Iterable, List
+from typing import Callable, Iterable, Dict
 
 import cvxpy as cp
 import numpy as np
@@ -108,7 +108,11 @@ def _pk(opt_set, opt_I, epsilon, lambda_max, k, membership_name, prob_size):
     opt_l, opt_u = opt_I(0)
 
     membership_fn = get_membership(membership_name)
-    k, nk, m = membership_fn(opt_set, opt_l, opt_u, k)
+    if k > 0:
+      k, nk, m = membership_fn(opt_set, opt_l, opt_u, k)
+    else: # membership function without preset k
+      k, nk, m = membership_fn(opt_set, opt_l, opt_u)
+      
 
     d = np.prod(opt_set.size()[-2:])
     # sample d_opt stratified by membership:
@@ -172,8 +176,7 @@ def _calibrate_k_rcps(
     delta: float,
     lambda_max: float,
     stepsize: torch.Tensor,
-    k: int,
-    membership_names: List[str],
+    membership_k: Dict[str, int],
     n_opt: int,
     prob_size: float,
     gamma: Iterable[float],
@@ -189,8 +192,8 @@ def _calibrate_k_rcps(
 
     agg_lambda = torch.zeros(cal_set.size()[1:])
 
-    for memn in membership_names:
-      prob, m = _pk(opt_set, opt_I, epsilon, lambda_max, k, memn, prob_size)
+    for memf, k in membership_k.items():
+      prob, m = _pk(opt_set, opt_I, epsilon, lambda_max, k, memf, prob_size)
       pk, q, m_lambda = prob
 
       sol = [_solve(q, pk, m_lambda, _gamma) for _gamma in tqdm(gamma)]
@@ -198,7 +201,7 @@ def _calibrate_k_rcps(
       lambda_k, _ = sol[0]
       agg_lambda += torch.matmul(m, lambda_k)
     
-    agg_lambda /= len(membership_names)
+    agg_lambda /= len(membership_k)
     agg_lambda += lambda_max 
 
     _lambda = _rcps(

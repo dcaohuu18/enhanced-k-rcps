@@ -1,6 +1,7 @@
 import numpy as np
 import torch
-from skimage.filters import threshold_multiotsu
+from skimage.filters import threshold_multiotsu, threshold_isodata
+from skimage.segmentation import slic
 from sklearn.cluster import KMeans
 from itertools import product
 
@@ -90,6 +91,34 @@ def _01_loss_otsu(opt_set, opt_l, opt_u, k):
     return k, nk, m
 
 
+@register_membership(name="01_loss_isodata")
+def _01_loss_isodata(opt_set, opt_l, opt_u):
+    loss_fn = get_loss("vector_01")
+    loss = loss_fn(opt_set, opt_l, opt_u)
+
+    t = threshold_isodata(loss.numpy())
+    k = 2
+
+    m = (k - 1) * torch.ones_like(loss, dtype=torch.long)
+    m[loss <= t] = 0
+
+    # one-hot encoding:
+    tcoords = []
+    for _k in range(k):
+        tcoords.append(torch.nonzero(m == _k, as_tuple=True))
+
+    assert len(tcoords) == k
+    assert all([len(_t[0]) == len(_t[1]) for _t in tcoords])
+    assert sum([len(_t[0]) for _t in tcoords]) == torch.numel(loss)
+
+    nk = np.empty((k))
+    m = torch.zeros(opt_set.size(-2), opt_set.size(-1), k)
+    for _k, _t in enumerate(tcoords):
+        nk[_k] = len(_t[0])
+        m[_t[0], _t[1], _k] = 1
+    return k, nk, m
+
+
 @register_membership(name="01_loss_kmeans")
 def _01_loss_kmeans(opt_set, opt_l, opt_u, k):
     loss_fn = get_loss("vector_01")
@@ -114,4 +143,31 @@ def _01_loss_kmeans(opt_set, opt_l, opt_u, k):
     for _k, _t in enumerate(ccoords):
         nk[_k] = len(_t[0])
         m[_t[0], _t[1], _k] = 1
+    return k, nk, m
+
+
+@register_membership(name="01_loss_slic")
+def _01_loss_slic(opt_set, opt_l, opt_u, k):
+    loss_fn = get_loss("vector_01")
+    loss = loss_fn(opt_set, opt_l, opt_u)
+
+    m = slic(loss.numpy(), n_segments=k, start_label=0)
+    k = len(np.unique(m))
+    m = torch.tensor(m)
+
+    # one-hot encoding:
+    scoords = []
+    for _k in range(k):
+        scoords.append(torch.nonzero(m == _k, as_tuple=True))
+
+    assert len(scoords) == k
+    assert all([len(_s[0]) == len(_s[1]) for _s in scoords])
+    assert sum([len(_s[0]) for _s in scoords]) == torch.numel(loss)
+
+    nk = np.empty((k))
+    m = torch.zeros(opt_set.size(-2), opt_set.size(-1), k)
+    for _k, _t in enumerate(scoords):
+        nk[_k] = len(_t[0])
+        m[_t[0], _t[1], _k] = 1
+
     return k, nk, m
