@@ -1,10 +1,15 @@
 import numpy as np
 import torch
-from skimage.filters import threshold_multiotsu, threshold_isodata
+from skimage.filters import (
+  threshold_multiotsu, 
+  threshold_isodata, 
+  threshold_li,
+  threshold_local,
+  threshold_triangle,
+  threshold_yen)
 from skimage.segmentation import slic
 from sklearn.cluster import KMeans
 from itertools import product
-
 from .utils import get_loss, register_membership
 
 
@@ -97,6 +102,122 @@ def _01_loss_isodata(opt_set, opt_l, opt_u):
     loss = loss_fn(opt_set, opt_l, opt_u)
 
     t = threshold_isodata(loss.numpy())
+    try:
+      k = len(t) + 1
+    except TypeError:
+      t = np.array([t])
+      k = 2
+
+    m = (k - 1) * torch.ones_like(loss, dtype=torch.long)
+    for i, _t in enumerate(reversed(t)):
+        m[loss <= _t] = k - (i + 2)
+
+    # one-hot encoding:
+    tcoords = []
+    for _k in range(k):
+        tcoords.append(torch.nonzero(m == _k, as_tuple=True))
+
+    assert len(tcoords) == k
+    assert all([len(_t[0]) == len(_t[1]) for _t in tcoords])
+    assert sum([len(_t[0]) for _t in tcoords]) == torch.numel(loss)
+
+    nk = np.empty((k))
+    m = torch.zeros(opt_set.size(-2), opt_set.size(-1), k)
+    for _k, _t in enumerate(tcoords):
+        nk[_k] = len(_t[0])
+        m[_t[0], _t[1], _k] = 1
+    return k, nk, m
+
+
+@register_membership(name="01_loss_li")
+def _01_loss_li(opt_set, opt_l, opt_u):
+    loss_fn = get_loss("vector_01")
+    loss = loss_fn(opt_set, opt_l, opt_u)
+
+    t = threshold_li(loss.numpy())
+    k = 2
+
+    m = (k - 1) * torch.ones_like(loss, dtype=torch.long)
+    m[loss <= t] = 0
+
+    # one-hot encoding:
+    tcoords = []
+    for _k in range(k):
+        tcoords.append(torch.nonzero(m == _k, as_tuple=True))
+
+    assert len(tcoords) == k
+    assert all([len(_t[0]) == len(_t[1]) for _t in tcoords])
+    assert sum([len(_t[0]) for _t in tcoords]) == torch.numel(loss)
+
+    nk = np.empty((k))
+    m = torch.zeros(opt_set.size(-2), opt_set.size(-1), k)
+    for _k, _t in enumerate(tcoords):
+        nk[_k] = len(_t[0])
+        m[_t[0], _t[1], _k] = 1
+    return k, nk, m
+
+
+@register_membership(name="01_loss_local")
+def _01_loss_local(opt_set, opt_l, opt_u):
+    loss_fn = get_loss("vector_01")
+    loss = loss_fn(opt_set, opt_l, opt_u)
+
+    t = threshold_local(loss.numpy())
+    m = (loss.numpy() > t).astype(int)
+    m = torch.tensor(m)
+    k = 2
+
+    # one-hot encoding:
+    tcoords = []
+    for _k in range(k):
+        tcoords.append(torch.nonzero(m == _k, as_tuple=True))
+
+    assert len(tcoords) == k
+    assert all([len(_t[0]) == len(_t[1]) for _t in tcoords])
+    assert sum([len(_t[0]) for _t in tcoords]) == torch.numel(loss)
+
+    nk = np.empty((k))
+    m = torch.zeros(opt_set.size(-2), opt_set.size(-1), k)
+    for _k, _t in enumerate(tcoords):
+        nk[_k] = len(_t[0])
+        m[_t[0], _t[1], _k] = 1
+    return k, nk, m
+
+
+@register_membership(name="01_loss_triangle")
+def _01_loss_triangle(opt_set, opt_l, opt_u):
+    loss_fn = get_loss("vector_01")
+    loss = loss_fn(opt_set, opt_l, opt_u)
+
+    t = threshold_triangle(loss.numpy())
+    k = 2
+
+    m = (k - 1) * torch.ones_like(loss, dtype=torch.long)
+    m[loss <= t] = 0
+
+    # one-hot encoding:
+    tcoords = []
+    for _k in range(k):
+        tcoords.append(torch.nonzero(m == _k, as_tuple=True))
+
+    assert len(tcoords) == k
+    assert all([len(_t[0]) == len(_t[1]) for _t in tcoords])
+    assert sum([len(_t[0]) for _t in tcoords]) == torch.numel(loss)
+
+    nk = np.empty((k))
+    m = torch.zeros(opt_set.size(-2), opt_set.size(-1), k)
+    for _k, _t in enumerate(tcoords):
+        nk[_k] = len(_t[0])
+        m[_t[0], _t[1], _k] = 1
+    return k, nk, m
+
+
+@register_membership(name="01_loss_yen")
+def _01_loss_yen(opt_set, opt_l, opt_u):
+    loss_fn = get_loss("vector_01")
+    loss = loss_fn(opt_set, opt_l, opt_u)
+
+    t = threshold_yen(loss.numpy())
     k = 2
 
     m = (k - 1) * torch.ones_like(loss, dtype=torch.long)

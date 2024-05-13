@@ -180,6 +180,7 @@ def _calibrate_k_rcps(
     n_opt: int,
     prob_size: float,
     gamma: Iterable[float],
+    lambda_agg_fn: Callable = torch.median,
 ):
     n = cal_set.size(0)
     opt_idx, rcps_idx = _split_idx(n, n_opt)
@@ -190,18 +191,20 @@ def _calibrate_k_rcps(
     opt_I = _set_I(I, opt_idx)
     rcps_I = _set_I(I, rcps_idx)
 
-    agg_lambda = torch.zeros(cal_set.size()[1:])
+    agg_lambda = torch.zeros(len(membership_k), *cal_set.size()[1:])
 
-    for memf, k in membership_k.items():
+    for i, (memf, k) in enumerate(membership_k.items()):
       prob, m = _pk(opt_set, opt_I, epsilon, lambda_max, k, memf, prob_size)
       pk, q, m_lambda = prob
 
       sol = [_solve(q, pk, m_lambda, _gamma) for _gamma in tqdm(gamma)]
       sol = sorted(sol, key=lambda x: x[-1])
       lambda_k, _ = sol[0]
-      agg_lambda += torch.matmul(m, lambda_k)
+      agg_lambda[i] = torch.matmul(m, lambda_k)
     
-    agg_lambda /= len(membership_k)
+    agg_lambda = lambda_agg_fn(agg_lambda, dim=0)
+    if not torch.is_tensor(agg_lambda):
+      agg_lambda = agg_lambda.values
     agg_lambda += lambda_max 
 
     _lambda = _rcps(
