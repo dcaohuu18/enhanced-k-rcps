@@ -26,7 +26,8 @@ def _rcps(
     lambda_max: torch.Tensor,
     stepsize: float,
     eta: torch.Tensor = None,
-    momen: float = 0.1
+    momen: float = 0.1,
+    smooth: float = 0.6
 ):
     loss_fn = get_loss(loss_name)
     bound_fn = get_bound(bound_name)
@@ -40,11 +41,46 @@ def _rcps(
     eta_changes = torch.zeros_like(eta)
 
     loss_vec = loss_fn(rcps_set, *I(_lambda), reduction="none")
+    prev_loss_vec = loss_vec.clone()
+    if eta.size():
+        loss_delta = torch.mean(loss_vec, dim=0) 
+    else:
+        loss_delta = torch.mean(loss_vec)
     ucb = bound_fn(n_rcps, delta, torch.mean(loss_vec))
 
     pbar = tqdm(total=epsilon)
     pbar.update(ucb)
     pold = ucb
+
+    while ucb <= epsilon:
+        pbar.update(ucb - pold)
+        pold = ucb
+
+        prev_lambda = _lambda.clone()
+        if torch.all(prev_lambda == 0):
+            break
+
+        _lambda -= stepsize * eta
+        _lambda = torch.clamp(_lambda, min=0)
+
+        loss_vec = loss_fn(rcps_set, *I(_lambda), reduction="none")
+        if eta.size():
+            entry_loss = torch.mean(loss_vec, dim=0)
+            prev_entry_loss = torch.mean(prev_loss_vec, dim=0)
+            loss_delta = smooth*(entry_loss - prev_entry_loss) + (1-smooth)*loss_delta 
+        else:
+            loss_delta = smooth*(torch.mean(loss_vec) - torch.mean(prev_loss_vec)
+                         ) + (1-smooth)*loss_delta 
+        loss_delta = torch.clamp(loss_delta, min=0.0)
+        eta = torch.clamp(eta - loss_delta, min=0.0)
+        prev_ucb = ucb
+        ucb = bound_fn(n_rcps, delta, torch.mean(loss_vec))
+        eta_changes = prev_eta - eta
+        prev_eta = eta
+        prev_loss_vec = loss_vec
+
+    _lambda = prev_lambda
+    ucb = prev_ucb
 
     while not torch.all(eta == 0):
         pbar.update(ucb - pold)
@@ -60,15 +96,17 @@ def _rcps(
         loss_vec = loss_fn(rcps_set, *I(_lambda), reduction="none")
         prev_ucb = ucb
         ucb = bound_fn(n_rcps, delta, torch.mean(loss_vec))
+
         if ucb > epsilon:
             if eta.size():
                 entry_loss = torch.mean(loss_vec, dim=0) 
                 eta -= (entry_loss + momen*eta_changes)
             else:
                 eta -= (torch.mean(loss_vec) + momen*eta_changes)
-            eta = torch.clamp(eta, min=0.0) 
+            eta = torch.clamp(eta, min=0.0)
             _lambda = prev_lambda
             ucb = prev_ucb
+
         eta_changes = prev_eta - eta
         prev_eta = eta
 
