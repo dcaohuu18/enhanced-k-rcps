@@ -13,7 +13,7 @@ from itertools import product
 from .utils import get_loss, register_membership
 
 
-@register_membership(name="01_loss_quantile")
+@register_membership(name="01_loss_quantile_m")
 def _01_loss_quantile(opt_set, opt_l, opt_u, k):
     loss_fn = get_loss("vector_01")
     loss = loss_fn(opt_set, opt_l, opt_u)
@@ -42,7 +42,7 @@ def _01_loss_quantile(opt_set, opt_l, opt_u, k):
     return k, nk, m
 
 
-@register_membership(name="01_loss_softquant")
+@register_membership(name="01_loss_softquant_m")
 def _01_loss_softquant(opt_set, opt_l, opt_u, k):
     loss_fn = get_loss("vector_01")
     loss_vec = loss_fn(opt_set, opt_l, opt_u, reduction="none")
@@ -67,7 +67,7 @@ def _01_loss_softquant(opt_set, opt_l, opt_u, k):
     return k, nk, m
 
 
-@register_membership(name="01_loss_otsu")
+@register_membership(name="01_loss_otsu_m")
 def _01_loss_otsu(opt_set, opt_l, opt_u, k):
     loss_fn = get_loss("vector_01")
     loss = loss_fn(opt_set, opt_l, opt_u)
@@ -96,7 +96,7 @@ def _01_loss_otsu(opt_set, opt_l, opt_u, k):
     return k, nk, m
 
 
-@register_membership(name="01_loss_isodata")
+@register_membership(name="01_loss_isodata_m")
 def _01_loss_isodata(opt_set, opt_l, opt_u):
     loss_fn = get_loss("vector_01")
     loss = loss_fn(opt_set, opt_l, opt_u)
@@ -129,7 +129,7 @@ def _01_loss_isodata(opt_set, opt_l, opt_u):
     return k, nk, m
 
 
-@register_membership(name="01_loss_li")
+@register_membership(name="01_loss_li_m")
 def _01_loss_li(opt_set, opt_l, opt_u):
     loss_fn = get_loss("vector_01")
     loss = loss_fn(opt_set, opt_l, opt_u)
@@ -157,7 +157,7 @@ def _01_loss_li(opt_set, opt_l, opt_u):
     return k, nk, m
 
 
-@register_membership(name="01_loss_local")
+@register_membership(name="01_loss_local_m")
 def _01_loss_local(opt_set, opt_l, opt_u):
     loss_fn = get_loss("vector_01")
     loss = loss_fn(opt_set, opt_l, opt_u)
@@ -184,7 +184,7 @@ def _01_loss_local(opt_set, opt_l, opt_u):
     return k, nk, m
 
 
-@register_membership(name="01_loss_triangle")
+@register_membership(name="01_loss_triangle_m")
 def _01_loss_triangle(opt_set, opt_l, opt_u):
     loss_fn = get_loss("vector_01")
     loss = loss_fn(opt_set, opt_l, opt_u)
@@ -212,7 +212,7 @@ def _01_loss_triangle(opt_set, opt_l, opt_u):
     return k, nk, m
 
 
-@register_membership(name="01_loss_yen")
+@register_membership(name="01_loss_yen_m")
 def _01_loss_yen(opt_set, opt_l, opt_u):
     loss_fn = get_loss("vector_01")
     loss = loss_fn(opt_set, opt_l, opt_u)
@@ -240,7 +240,7 @@ def _01_loss_yen(opt_set, opt_l, opt_u):
     return k, nk, m
 
 
-@register_membership(name="01_loss_kmeans")
+@register_membership(name="01_loss_kmeans_m")
 def _01_loss_kmeans(opt_set, opt_l, opt_u, k):
     loss_fn = get_loss("vector_01")
     loss = loss_fn(opt_set, opt_l, opt_u)
@@ -267,7 +267,7 @@ def _01_loss_kmeans(opt_set, opt_l, opt_u, k):
     return k, nk, m
 
 
-@register_membership(name="01_loss_slic")
+@register_membership(name="01_loss_slic_m")
 def _01_loss_slic(opt_set, opt_l, opt_u, k):
     loss_fn = get_loss("vector_01")
     loss = loss_fn(opt_set, opt_l, opt_u)

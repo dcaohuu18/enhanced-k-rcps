@@ -8,6 +8,7 @@ _LOSS_DICT = {}
 _BOUND_DICT = {}
 _MEMBERSHIP_DICT = {}
 _CALIBRATION_DICT = {}
+_QUANTIZATION_DICT = {}
 
 
 def register_fn(dict: dict = None, name: str = None) -> Callable:
@@ -41,6 +42,10 @@ def register_calibration(name: str = None) -> Callable:
     return register_fn(dict=_CALIBRATION_DICT, name=name)
 
 
+def register_quantization(name: str = None) -> Callable:
+    return register_fn(dict=_QUANTIZATION_DICT, name=name)
+
+
 def get_uq(name: str, *args, **kwargs) -> Callable:
     def _f(x: torch.Tensor, **kfargs):
         return _UQ_DICT[name](x, *args, **kwargs, **kfargs)
@@ -71,6 +76,15 @@ def get_membership(name: str, *args, **kwargs) -> Callable:
 
 def get_calibration(name: str) -> Callable:
     return _CALIBRATION_DICT[name]
+
+
+def get_quantization(name: str, *args, **kwargs) -> Callable:
+    def _f(set: torch.Tensor, l: torch.Tensor, u: torch.Tensor, 
+           m: torch.Tensor, _k: int, _pnk: int, *qf_args, **qf_kwargs):
+        return _QUANTIZATION_DICT[name](set, l, u, m, _k, _pnk, 
+                                        *qf_args, *args, **kwargs, **qf_kwargs)
+
+    return _f
 
 
 def _split_idx(n: int, n_split: int) -> Tuple[List[int], List[int]]:

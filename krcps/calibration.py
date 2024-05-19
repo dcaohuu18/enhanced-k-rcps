@@ -12,6 +12,7 @@ from .utils import (
     get_bound,
     get_loss,
     get_membership,
+    get_quantization,
     register_calibration,
 )
 
@@ -141,31 +142,37 @@ def _gamma_loss_fn(i, offset, q, _lambda):
     return loss
 
 
-def _pk(opt_set, opt_I, epsilon, lambda_max, k, membership_name, prob_size):
+def _pk(opt_set, opt_I, epsilon, lambda_max, k, membership_name, 
+        prob_size, quantization_name):
     n_opt = opt_set.size(0)
     opt_l, opt_u = opt_I(0)
 
     membership_fn = get_membership(membership_name)
     if k > 0:
-      k, nk, m = membership_fn(opt_set, opt_l, opt_u, k)
+        k, nk, m = membership_fn(opt_set, opt_l, opt_u, k)
     else: # membership function without preset k
-      k, nk, m = membership_fn(opt_set, opt_l, opt_u)
-      
+        k, nk, m = membership_fn(opt_set, opt_l, opt_u)
 
     d = np.prod(opt_set.size()[-2:])
     # sample d_opt stratified by membership:
     prob_nk = np.round(prob_size / d * nk).astype(int)
     prob_i, prob_j, prob_lambda = [], [], []
     for _k, _pnk in enumerate(prob_nk):
-        # get all the possible coords i,j:
-        _ki, _kj = torch.nonzero(m[:, :, _k] != -2, as_tuple=True)
-        # sample based on normalized membership degree
-        _kidx = np.random.choice(
-            d, size=_pnk, replace=False,
-            p = (torch.flatten(m[:, :, _k])/torch.sum(m[:, :, _k])).numpy()
-        )
-        prob_i.extend(_ki[_kidx])
-        prob_j.extend(_kj[_kidx])
+        if quantization_name is not None:
+            quantization_fn = get_quantization(quantization_name)
+            _pi, _pj = quantization_fn(opt_set, opt_l, opt_u, m, _k, _pnk)
+        else:
+            # get all the possible coords i,j:
+            _ki, _kj = torch.nonzero(m[:, :, _k] != -2, as_tuple=True)
+            # sample based on normalized membership degree
+            _kidx = np.random.choice(
+              d, size=_pnk, replace=False,
+              p = (torch.flatten(m[:, :, _k])/torch.sum(m[:, :, _k])).numpy()
+            )
+            _pi, _pj = _ki[_kidx], _kj[_kidx]
+        
+        prob_i.extend(_pi)
+        prob_j.extend(_pj)
         prob_lambda.extend(_pnk * [_k])
 
     _lambda = cp.Variable(k)
@@ -218,6 +225,7 @@ def _calibrate_k_rcps(
     n_opt: int,
     prob_size: float,
     gamma: Iterable[float],
+    quantization_name: str,
     lambda_agg_fn: Callable = torch.median,
 ):
     n = cal_set.size(0)
@@ -232,7 +240,8 @@ def _calibrate_k_rcps(
     agg_lambda = torch.zeros(len(membership_k), *cal_set.size()[1:])
 
     for i, (memf, k) in enumerate(membership_k.items()):
-      prob, m = _pk(opt_set, opt_I, epsilon, lambda_max, k, memf, prob_size)
+      prob, m = _pk(opt_set, opt_I, epsilon, lambda_max, k, memf, 
+                    prob_size, quantization_name)
       pk, q, m_lambda = prob
 
       sol = [_solve(q, pk, m_lambda, _gamma) for _gamma in tqdm(gamma)]
